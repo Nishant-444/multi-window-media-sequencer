@@ -8,6 +8,7 @@
 
 [![Frontend — Vercel](https://img.shields.io/badge/Frontend-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://multi-window-media-sequencer.vercel.app/)
 [![Backend — Railway](https://img.shields.io/badge/Backend-Railway-6366f1?style=for-the-badge&logo=railway&logoColor=white)](https://multi-window-media-sequencer-production.up.railway.app/api/health)
+[![Health Check](https://img.shields.io/badge/Health_Check-Live-brightgreen?style=for-the-badge&logo=statuspage&logoColor=white)](https://multi-window-media-sequencer-production.up.railway.app/api/health)
 
 **Version:** 1.0.0
 **Backend:** Golang 1.22 (Standard Library `net/http` — zero web frameworks)
