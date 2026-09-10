@@ -23,16 +23,18 @@ RUN echo 'server { \
         try_files $uri $uri/ /index.html; \
     } \
     location /api/ { \
-        proxy_pass http://backend:8080/api/; \
-        proxy_set_header Host $host; \
+        proxy_pass https://multi-window-media-sequencer-production.up.railway.app/api/; \
+        proxy_ssl_server_name on; \
+        proxy_set_header Host multi-window-media-sequencer-production.up.railway.app; \
         proxy_set_header X-Real-IP $remote_addr; \
     } \
     location /ws { \
-        proxy_pass http://backend:8080/ws; \
+        proxy_pass https://multi-window-media-sequencer-production.up.railway.app/ws; \
         proxy_http_version 1.1; \
         proxy_set_header Upgrade $http_upgrade; \
         proxy_set_header Connection "Upgrade"; \
-        proxy_set_header Host $host; \
+        proxy_ssl_server_name on; \
+        proxy_set_header Host multi-window-media-sequencer-production.up.railway.app; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
