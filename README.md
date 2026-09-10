@@ -20,8 +20,6 @@
 
 The system enables multiple display viewports to independently play media streams (video, image, or intentional blank states) within an autonomous **5-hour operational cycle**. Concurrently, the service provides an instant, thread-safe **Synchronized Playback Override** that interrupts all active displays to broadcast a single prioritized asset simultaneously — then seamlessly restores individual timelines when the override window closes.
 
-For a deep technical breakdown of every Go concept used in this codebase — written for engineers new to Go — see **[GOLANG_EXPLAINER.md](./GOLANG_EXPLAINER.md)**.
-
 ---
 
 ## 2. System Architecture
