@@ -8,7 +8,7 @@ frontend/yarn-debug.log*
 frontend/yarn-error.log*
 
 # Go & Backend
-backend/server
+# backend/server
 backend/*.exe
 backend/*.exe~
 backend/*.dll
@@ -26,3 +26,4 @@ backend/*.test
 .idea/
 .vscode/
 *.log
+/server
