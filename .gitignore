@@ -1,0 +1,28 @@
+# Node & Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Go & Backend
+backend/server
+backend/*.exe
+backend/*.exe~
+backend/*.dll
+backend/*.so
+backend/*.dylib
+backend/*.db
+backend/*.db-journal
+backend/*.db-wal
+backend/*.db-shm
+backend/*.out
+backend/*.test
+
+# General
+.DS_Store
+.idea/
+.vscode/
+*.log

@@ -1,0 +1,15 @@
+server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.out
+*.test
+.DS_Store
+.idea/
+.vscode/

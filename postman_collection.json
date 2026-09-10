@@ -1,0 +1,261 @@
+{
+	"info": {
+		"_postman_id": "8a7c2e4f-1234-4567-89ab-cdef01234567",
+		"name": "MediaPulse API - Multi-Window Media Sequencer",
+		"description": "Postman API Collection for Multi-Window Media Sequencer with Sync Playback (EVA Bharat Assignment 2)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "System",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"health"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Windows",
+			"item": [
+				{
+					"name": "Get All Windows (with Playlists & Timeline)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/windows",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"windows"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create New Display Window",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Window 4 - Outdoor Plaza Screen\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/windows",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"windows"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Media Items",
+			"item": [
+				{
+					"name": "Add Media Item to Window (Image)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Architectural Poster\",\n  \"type\": \"image\",\n  \"url\": \"https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80\",\n  \"duration\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/windows/win-1/media",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"windows",
+								"win-1",
+								"media"
+							]
+						}
+					}
+				},
+				{
+					"name": "Add Media Item to Window (Video)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"4K Wildlife Reel\",\n  \"type\": \"video\",\n  \"url\": \"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4\",\n  \"duration\": 15\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/windows/win-1/media",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"windows",
+								"win-1",
+								"media"
+							]
+						}
+					}
+				},
+				{
+					"name": "Add Media Item to Window (Blank State)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Scheduled Blank Intermission\",\n  \"type\": \"blank\",\n  \"url\": \"\",\n  \"duration\": 5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/windows/win-1/media",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"windows",
+								"win-1",
+								"media"
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Media Item",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/media/med-101",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"media",
+								"med-101"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Sync Overrides",
+			"item": [
+				{
+					"name": "Get Current Sync Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/sync/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"sync",
+								"status"
+							]
+						}
+					}
+				},
+				{
+					"name": "Trigger Sync Override Across All Windows",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"media_item_id\": \"med-101\",\n  \"duration_seconds\": 15\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/sync",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"sync"
+							]
+						}
+					}
+				},
+				{
+					"name": "Cancel Sync Override Early",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/sync/stop",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"sync",
+								"stop"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
