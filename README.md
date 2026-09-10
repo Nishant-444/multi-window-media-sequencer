@@ -1,100 +1,116 @@
-# MediaPulse - Multi-Window Media Sequencer with Synchronized Playback
+# MediaPulse — Multi-Window Media Sequencer with Synchronized Playback
 
-[![Go Test & Build](https://img.shields.io/badge/Go_Build-Passing-brightgreen?style=for-the-badge&logo=go)](https://golang.org)
+[![Go Build](https://img.shields.io/badge/Go_Build-Passing-brightgreen?style=for-the-badge&logo=go)](https://golang.org)
 [![Docker](https://img.shields.io/badge/Docker-Multi--Stage-blue?style=for-the-badge&logo=docker)](https://hub.docker.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
 [![Database](https://img.shields.io/badge/SQLite-Pure_Go-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://modernc.org/sqlite)
-[![Frontend](https://img.shields.io/badge/React_18-Vite_&_Tailwind-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![Frontend](https://img.shields.io/badge/React_18-Vite_%26_Tailwind-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 
-**Version:** 1.0.0  
-**Target Runtime:** Linux / macOS / Windows / Docker  
-**Backend:** Golang (Standard Library `net/http`)  
-**Frontend:** React 18, Vite, Tailwind CSS  
-**Database:** Embedded SQLite 3 (`modernc.org/sqlite`, CGO-Free)  
+**Version:** 1.0.0
+**Backend:** Golang 1.22 (Standard Library `net/http` — zero web frameworks)
+**Frontend:** React 18, Vite, Tailwind CSS
+**Database:** Embedded SQLite 3 (`modernc.org/sqlite`, CGO-free)
+**Target Runtime:** Linux / macOS / Windows / Docker
 
 ---
 
 ## 1. Executive Summary
 
-**MediaPulse** is a high-availability, full-stack media sequencing and digital signage engine engineered to satisfy all core requirements of the **EVA Bharat Backend Development Intern Assignment 2**.
+**MediaPulse** is a production-grade, full-stack media sequencing and digital signage engine built to satisfy all requirements of the **EVA Bharat Backend Development Intern Assignment 2**.
 
-The system enables multiple physical or virtual display viewports to continuously play distinct media streams (video, image, or ambient fallback states) within an autonomous **5-hour operational cycle**. In tandem, the service provides an instant, thread-safe **Synchronized Playback Override** that interrupts all active displays to broadcast a single prioritized media asset simultaneously, seamlessly resuming individual timelines when the override window closes.
+The system enables multiple display viewports to independently play media streams (video, image, or intentional blank states) within an autonomous **5-hour operational cycle**. Concurrently, the service provides an instant, thread-safe **Synchronized Playback Override** that interrupts all active displays to broadcast a single prioritized asset simultaneously — then seamlessly restores individual timelines when the override window closes.
+
+For a deep technical breakdown of every Go concept used in this codebase — written for engineers new to Go — see **[GOLANG_EXPLAINER.md](./GOLANG_EXPLAINER.md)**.
 
 ---
 
 ## 2. System Architecture
 
 ```
-                                [ Client Browsers / Display Displays ]
-                                             │              ▲
-                                  HTTP (REST)│              │ WebSocket (ws://:8080/ws)
-                                             ▼              │
-┌───────────────────────────────────────────────────────────┼────────────────────────────────────────┐
-│ Golang Backend Service (net/http.ServeMux)                │                                        │
-│                                                           │                                        │
-│   ├── CORS Middleware                                     │                                        │
-│   │                                                       │                                        │
-│   ├── REST Handlers ──────────────────────────────────────┼─────────────┐                          │
-│   │   ├── GET  /api/health                                │             │                          │
-│   │   ├── GET  /api/windows                               │             │                          │
-│   │   ├── POST /api/windows                               │             │                          │
-│   │   ├── POST /api/windows/{id}/media                    │             │                          │
-│   │   ├── DEL  /api/media/{id}                            │             ▼                          │
-│   │   ├── GET  /api/sync/status                     ┌─────┴─────────────────────────┐              │
-│   │   ├── POST /api/sync                            │      WebSocket Hub            │              │
-│   │   └── POST /api/sync/stop                       │                               │              │
-│   │                                                 │  - Event Multiplexer (select) │              │
-│   ├── Synchronized Override Engine (SyncService)    │  - Non-blocking Fan-Out Queue │              │
-│   │   ├── sync.Mutex (State Serialization)          │  - Client Lifecycle Registry  │              │
-│   │   ├── Goroutine Timer (time.NewTimer)           └───────────────────────────────┘              │
-│   │   └── Modular Cycle Engine (5-Hour Loop)                      ▲                                │
-│   │                                                               │                                │
-│   └── Data Access Layer (Repository) ─────────────────────────────┘                                │
-│         │                                                                                          │
-│         ▼                                                                                          │
-│   [ SQLite 3 Database (modernc.org/sqlite) ]                                                       │
-│     - Windows Table                                                                                │
-│     - Media Items Table (Indexed by window_id, position)                                           │
-│     - Singleton Sync State Table                                                                   │
-└────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                              [ Client Browsers / Display Viewports ]
+                                           │              ▲
+                                HTTP (REST)│              │ WebSocket (ws://:8080/ws)
+                                           ▼              │
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ Golang Backend Service (net/http.ServeMux)                                         │
+│                                                                                    │
+│   ├── CORS Middleware (EnableCORS wrapper)                                         │
+│   │                                                                                │
+│   ├── REST Handlers ──────────────────────────────────────┐                        │
+│   │   ├── GET  /api/health                                │                        │
+│   │   ├── GET  /api/windows                               │                        │
+│   │   ├── POST /api/windows                               │                        │
+│   │   ├── POST /api/windows/{id}/media                    │                        │
+│   │   ├── DELETE /api/media/{id}                          ▼                        │
+│   │   ├── GET  /api/sync/status             ┌─────────────────────────────┐        │
+│   │   ├── POST /api/sync                    │      WebSocket Hub          │        │
+│   │   └── POST /api/sync/stop               │                             │        │
+│   │                                         │  - Event loop (select)      │        │
+│   ├── SyncService (Business Logic)          │  - Non-blocking fan-out     │        │
+│   │   ├── sync.Mutex (state guard)          │  - Client registry          │        │
+│   │   ├── Goroutine timer (auto-expiry)     └─────────────────────────────┘        │
+│   │   └── 5-Hour Cycle Calculator                        ▲                         │
+│   │                                                      │                         │
+│   └── Repository (Data Access Layer) ────────────────────┘                         │
+│         │                                                                           │
+│         ▼                                                                           │
+│   [ SQLite 3 — modernc.org/sqlite (pure Go, CGO-free) ]                            │
+│     - windows table                                                                 │
+│     - media_items table (indexed by window_id, position)                            │
+│     - sync_state table (singleton — persists override across restarts)              │
+└────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 3. Engineering & Concurrency Invariants
 
-### 3.1 Framework Restraint & Routing Purity
-To maximize performance, reduce memory overhead, and ensure absolute transparency during code review:
-- The backend uses **strictly standard library `net/http`** routing via Go 1.22+ `http.ServeMux`.
-- Zero third-party web frameworks (no Gin, Fiber, or Echo).
-- Path wildcards (`/api/windows/{id}/media`) and HTTP verb matching (`POST`, `DELETE`, `GET`) are handled natively.
+### 3.1 Framework Restraint
+- Backend uses **strictly standard library `net/http`** — no Gin, Fiber, or Echo.
+- Go 1.22 `ServeMux` handles method matching (`GET`, `POST`, `DELETE`) and path wildcards (`{id}`) natively.
 
 ### 3.2 5-Hour Continuous Timeline Engine
-The specification mandates that each display viewport treats its sequence as a 5-hour cycle ($18,000$ seconds):
-- Instead of terminating or dropping into blank screens when a playlist completes, the sequence wraps smoothly back to index `0` continuously.
-- **Formula:**
-  $$\text{CycleElapsed} = (\text{CurrentTime} - \text{CycleStartTime}) \pmod{18000}$$
-  $$\text{PlaylistOffset} = \text{CycleElapsed} \pmod{\sum \text{ItemDuration}}$$
-- A `blank` state is rendered **only** when explicitly configured as an intentional playlist item; the remainder of the timeline never defaults to blank playback.
+Each display viewport treats its sequence as an 18,000-second cycle:
 
-### 3.3 State Management & Race Condition Elimination
-- Shared in-memory override state (`models.SyncState`) is guarded by a mutual exclusion primitive (`sync.Mutex`).
-- Critical read/write sections acquire `mu.Lock()` and leverage `defer mu.Unlock()` to guarantee lock release across error paths or runtime panics.
-- SQLite writes are constrained to a serialized pool (`SetMaxOpenConns(1)`) to avoid `SQLITE_BUSY` locking friction across concurrent HTTP goroutines.
+$$\text{cycleElapsed} = (\text{now} - \text{serviceStart}) \bmod 18000$$
+$$\text{playlistOffset} = \text{cycleElapsed} \bmod \sum \text{itemDurations}$$
+
+The playlist wraps continuously. A `blank` state appears **only** when explicitly configured as a playlist item — the engine never silently defaults to blank.
+
+### 3.3 State Serialization & Race Condition Prevention
+- `syncState` is guarded by `sync.Mutex` — all reads and writes acquire the lock.
+- SQLite is constrained to `SetMaxOpenConns(1)` to prevent `SQLITE_BUSY` contention from concurrent HTTP goroutines.
+- Timer cancellation uses `close(chan struct{})` — Go's idiomatic one-to-many broadcast.
 
 ### 3.4 WebSocket Fan-Out Hub
-- The hub executes its event loop on an isolated background goroutine.
-- Inbound client frames and outgoing broadcast events are handled across buffered channels (`chan []byte`).
-- Slow, saturated, or disconnected clients are evicted via non-blocking channel selects (`default` fallthrough) to prevent head-of-line blocking for responsive displays.
+- Hub runs on an isolated background goroutine using a `select` event loop.
+- Slow or unresponsive clients are evicted via non-blocking `select/default` to prevent head-of-line blocking.
+- Ping/pong keepalives detect ghost connections within 60 seconds.
+
+### 3.5 Persistence Across Restarts
+- Active sync override timestamps are persisted to SQLite before the goroutine timer arms.
+- On startup, `NewSyncService` loads the stored state and re-arms the countdown timer for any remaining duration.
 
 ---
 
 ## 4. API Specification
 
-### 4.1 Displays & Playlists
+### 4.1 `GET /api/health`
+Server liveness probe.
+```json
+{
+  "service": "multi-window-media-sequencer",
+  "status": "healthy",
+  "timestamp": "2026-09-11T00:20:00Z"
+}
+```
+
+---
+
+### 4.2 Displays & Playlists
 
 #### `GET /api/windows`
-Returns all display viewports with ordered playlist items and computed timeline coordinates.
+Returns all display viewports with ordered playlists and computed timeline coordinates.
 ```json
 [
   {
@@ -118,6 +134,12 @@ Returns all display viewports with ordered playlist items and computed timeline 
       "cycle_elapsed_seconds": 120,
       "playlist_offset_seconds": 0,
       "current_item_index": 0,
+      "current_item": {
+        "id": "med-101",
+        "title": "Nature Wildlife Showcase",
+        "type": "video",
+        "duration": 15
+      },
       "item_elapsed_seconds": 0,
       "item_remaining_seconds": 15
     }
@@ -126,16 +148,13 @@ Returns all display viewports with ordered playlist items and computed timeline 
 ```
 
 #### `POST /api/windows`
-Registers a new display window entity.
-- **Request Body:**
-  ```json
-  { "name": "Window 4 - Outdoor Billboard" }
-  ```
-- **Response:** `201 Created`
+Registers a new display window.
+- **Body:** `{ "name": "Window 4 - Outdoor Billboard" }`
+- **Response:** `201 Created` with the created window object.
 
 #### `POST /api/windows/{id}/media`
-Appends a media item to the tail of the target window playlist.
-- **Request Body:**
+Appends a media item to the end of the target window's playlist.
+- **Body:**
   ```json
   {
     "title": "Retail Summer Promo",
@@ -144,18 +163,19 @@ Appends a media item to the tail of the target window playlist.
     "duration": 10
   }
   ```
-- **Response:** `201 Created`
+- **Response:** `201 Created` with the created media item object.
+- **Supported types:** `video`, `image`, `blank` (URL can be empty for `blank`).
 
 #### `DELETE /api/media/{id}`
-Deletes an asset and compacts subsequent sequence positions inside an atomic transaction.
+Removes a media asset and compacts subsequent sequence positions atomically.
 - **Response:** `200 OK`
 
 ---
 
-### 4.2 Synchronized Override Control
+### 4.3 Synchronized Override Control
 
 #### `GET /api/sync/status`
-Returns active override status and duration metrics.
+Returns the current override state with live remaining-time calculation.
 ```json
 {
   "is_active": true,
@@ -172,81 +192,138 @@ Returns active override status and duration metrics.
 ```
 
 #### `POST /api/sync`
-Initiates an override session across all displays.
-- **Request Body:**
+Initiates a synchronized override session across all connected displays.
+- **Body:**
   ```json
   {
     "media_item_id": "med-101",
     "duration_seconds": 15
   }
   ```
-- **Response:** `200 OK`
+- **Response:** `200 OK` with the activated `SyncState` object.
+- If `duration_seconds` is omitted or ≤ 0, defaults to **15 seconds**.
 
 #### `POST /api/sync/stop`
-Terminates an active override early and restores default sequences.
+Terminates an active override early and immediately restores all displays to their individual timelines.
 - **Response:** `200 OK`
 
 ---
 
-### 4.3 WebSocket Channel (`ws://localhost:8080/ws`)
+### 4.4 WebSocket Channel (`ws://localhost:8080/ws`)
 
-| Event Type | Payload Format | Description |
-| :--- | :--- | :--- |
-| `SYNC_START` | `models.SyncState` | Dispatched immediately when an override is triggered. Displays switch to target media. |
-| `SYNC_END` | `{"message": "..."}` | Dispatched when override duration expires or is cancelled. Displays resume normal playlists. |
-| `PLAYLIST_UPDATED` | `{"window_id": "...", "media_items": [...]}` | Dispatched on asset creation or deletion. Displays reflect live playlist modifications. |
-| `WINDOW_ADDED` | `models.Window` | Dispatched when a new screen is registered. |
+Connect to receive real-time events. All messages follow the format `{ "type": "...", "payload": { ... } }`.
+
+| Event Type | Payload | Trigger |
+|:---|:---|:---|
+| `SYNC_START` | `SyncState` object | `POST /api/sync` called |
+| `SYNC_END` | `{ "message": "..." }` | Override expires or `POST /api/sync/stop` called |
+| `PLAYLIST_UPDATED` | `{ "window_id": "...", "media_items": [...] }` | Media item added or deleted |
+| `WINDOW_ADDED` | `Window` object | `POST /api/windows` called |
 
 ---
 
-## 5. Local Setup & Execution
+## 5. Project Structure
+
+```
+multi-window-media-sequencer/
+├── GOLANG_EXPLAINER.md              ← Go concepts explained for web engineers
+├── README.md                        ← This file
+├── Dockerfile                       ← Root-context multi-stage Docker build
+├── docker-compose.yml               ← Orchestrates backend + frontend containers
+├── postman_collection.json          ← Import into Postman to test all endpoints
+│
+├── backend/
+│   ├── cmd/server/main.go           ← Entry point & dependency injection
+│   ├── internal/
+│   │   ├── models/models.go         ← Data types (Window, MediaItem, SyncState)
+│   │   ├── database/
+│   │   │   ├── db.go                ← SQLite connection pool & DDL schema
+│   │   │   └── seed.go              ← Idempotent demo data
+│   │   ├── repository/repository.go ← All SQL queries
+│   │   ├── service/
+│   │   │   ├── sync_service.go      ← Sync override logic & 5-hour cycle engine
+│   │   │   └── sync_service_test.go ← Unit tests
+│   │   ├── websocket/hub.go         ← Client registry & message fan-out
+│   │   └── handlers/handlers.go     ← HTTP endpoint implementations
+│   ├── go.mod / go.sum
+│   └── vendor/                      ← Vendored dependencies (reproducible builds)
+│
+└── frontend/
+    ├── src/
+    │   ├── App.jsx                  ← Main application component
+    │   ├── components/              ← MediaWindow, SyncControls, etc.
+    │   └── services/                ← REST API client & WebSocket hook
+    └── ...
+```
+
+---
+
+## 6. Local Setup & Execution
 
 ### Prerequisites
-- **Golang**: 1.22+
-- **Node.js**: 18+ and `npm`
+- **Go:** 1.22+
+- **Node.js:** 18+ with `npm`
 
-### 1. Run Backend Service
+### Step 1 — Run the Backend
 ```bash
 cd backend
-go mod tidy
-go test -v ./...
+go mod tidy          # download dependencies
+go test -v ./...     # run unit tests (should all pass)
 go run ./cmd/server/main.go
 ```
-The HTTP listener binds to `:8080` and the WebSocket channel is accessible at `ws://:8080/ws`.
+- HTTP API available at `http://localhost:8080`
+- WebSocket available at `ws://localhost:8080/ws`
+- Health check: `curl http://localhost:8080/api/health`
 
-### 2. Run Frontend Application
-In a separate terminal:
+### Step 2 — Run the Frontend
+Open a separate terminal:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Navigate to `http://localhost:5173`.
+Navigate to **`http://localhost:5173`**.
+
+> **Environment Variables** (backend):
+> | Variable | Default | Description |
+> |:---|:---|:---|
+> | `PORT` | `8080` | HTTP listener port |
+> | `DB_PATH` | `media_sequencer.db` | SQLite file path |
 
 ---
 
-## 6. Containerized Deployment (Docker Compose)
+## 7. Containerized Deployment (Docker Compose)
 
-The repository provides production-grade multi-stage Docker builds:
-- **Backend:** Compiles a statically linked, CGO-free binary running on minimal Alpine Linux.
-- **Frontend:** Compiles static assets served via an Nginx reverse-proxy image.
+Production-grade multi-stage builds:
+- **Backend:** Statically-linked CGO-free binary on Alpine Linux
+- **Frontend:** Static assets via Nginx reverse-proxy
 
-### 1-Click Launch:
 ```bash
+# Build and start both services
 docker compose up --build -d
+
+# View logs
+docker compose logs -f
 ```
-- Frontend UI: `http://localhost:3000`
-- Backend API: `http://localhost:8080`
+
+| Service | URL |
+|:---|:---|
+| Frontend UI | `http://localhost:3000` |
+| Backend API | `http://localhost:8080` |
+| Health Check | `http://localhost:8080/api/health` |
 
 ---
 
-## 7. Automated Test Suite
+## 8. Automated Test Suite
 
-Unit tests validate the mathematical sequence engine and boundary transitions:
+Unit tests cover the 5-hour cycle mathematical engine and boundary conditions:
+
 ```bash
 cd backend
 go test -v ./...
 ```
+
+Expected output:
 ```
 === RUN   TestCalculate5HourCyclePosition
 --- PASS: TestCalculate5HourCyclePosition (0.00s)
@@ -257,3 +334,18 @@ go test -v ./...
 PASS
 ok  	multi-window-media-sequencer/backend/internal/service	0.003s
 ```
+
+**Test coverage:**
+| Test | What it validates |
+|:---|:---|
+| `TestCalculate5HourCyclePosition` | Correct item index, elapsed, and remaining seconds for a mid-playlist offset |
+| `Test5HourCycleBoundaryWrap` | That 18,010 seconds wraps back to 10 seconds elapsed (cycle boundary) |
+| `TestEmptyPlaylistHandling` | Safe zero-state return for windows with no media items |
+
+---
+
+## 9. Testing with Postman
+
+Import `postman_collection.json` into Postman. The collection includes pre-configured requests for all 8 endpoints with example bodies. Set the `baseUrl` collection variable to:
+- **Local:** `http://localhost:8080`
+- **Docker:** `http://localhost:8080`
