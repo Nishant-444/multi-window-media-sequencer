@@ -25,6 +25,4 @@ ENV DB_PATH=/app/data/media_sequencer.db
 
 RUN mkdir -p /app/data
 
-VOLUME ["/app/data"]
-
 CMD ["./server"]
