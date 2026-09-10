@@ -6,11 +6,17 @@
 [![Database](https://img.shields.io/badge/SQLite-Pure_Go-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://modernc.org/sqlite)
 [![Frontend](https://img.shields.io/badge/React_18-Vite_%26_Tailwind-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 
+[![Frontend — Vercel](https://img.shields.io/badge/Frontend-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://multi-window-media-sequencer.vercel.app/)
+[![Backend — Railway](https://img.shields.io/badge/Backend-Railway-6366f1?style=for-the-badge&logo=railway&logoColor=white)](https://multi-window-media-sequencer-production.up.railway.app/api/health)
+
 **Version:** 1.0.0
 **Backend:** Golang 1.22 (Standard Library `net/http` — zero web frameworks)
 **Frontend:** React 18, Vite, Tailwind CSS
 **Database:** Embedded SQLite 3 (`modernc.org/sqlite`, CGO-free)
 **Target Runtime:** Linux / macOS / Windows / Docker
+
+**Live Frontend:** https://multi-window-media-sequencer.vercel.app/  
+**Live Backend API:** https://multi-window-media-sequencer-production.up.railway.app
 
 ---
 
@@ -256,7 +262,20 @@ multi-window-media-sequencer/
 
 ---
 
-## 6. Local Setup & Execution
+## 6. Live Deployment
+
+The application is deployed and publicly accessible:
+
+| Service | URL |
+|:---|:---|
+| **Frontend** (Vercel) | https://multi-window-media-sequencer.vercel.app/ |
+| **Backend API** (Railway) | https://multi-window-media-sequencer-production.up.railway.app |
+| **API Health Check** | https://multi-window-media-sequencer-production.up.railway.app/api/health |
+| **WebSocket** | `wss://multi-window-media-sequencer-production.up.railway.app/ws` |
+
+---
+
+## 7. Local Setup & Execution
 
 ### Prerequisites
 - **Go:** 1.22+
@@ -290,7 +309,7 @@ Navigate to **`http://localhost:5173`**.
 
 ---
 
-## 7. Containerized Deployment (Docker Compose)
+## 8. Containerized Deployment (Docker Compose)
 
 Production-grade multi-stage builds:
 - **Backend:** Statically-linked CGO-free binary on Alpine Linux
@@ -312,7 +331,7 @@ docker compose logs -f
 
 ---
 
-## 8. Automated Test Suite
+## 9. Automated Test Suite
 
 Unit tests cover the 5-hour cycle mathematical engine and boundary conditions:
 
@@ -342,7 +361,7 @@ ok  	multi-window-media-sequencer/backend/internal/service	0.003s
 
 ---
 
-## 9. Testing with Postman
+## 10. Testing with Postman
 
 Import `postman_collection.json` into Postman. The collection includes pre-configured requests for all 8 endpoints with example bodies. Set the `baseUrl` collection variable to:
 - **Local:** `http://localhost:8080`
